@@ -86,7 +86,7 @@ describe('TEST - BOLETO', () => {
         });
       });
 
-      it('DV - Convenio', () => {
+      it('DV - Convenio - mod10', () => {
         const appController = app.get<AppController>(AppController);
 
         appController.boleto(
@@ -99,11 +99,25 @@ describe('TEST - BOLETO', () => {
           errorMsg: 'Falha na verificação do DV',
         });
       });
+
+      it('DV - Convenio - mod11', () => {
+        const appController = app.get<AppController>(AppController);
+
+        appController.boleto(
+          '868800020014222224411129290280491060411122552006',
+          responseMock,
+        );
+
+        expect(jsonResponseMock.json).toHaveBeenCalledWith({
+          msg: 'Linha inválida',
+          errorMsg: 'Falha na verificação do DV',
+        });
+      });
     });
   });
 
   describe('should return sucess - Boletos', () => {
-    it('should return type CONVENIO', () => {
+    it('should return type CONVENIO-md10', () => {
       const appController = app.get<AppController>(AppController);
 
       appController.boleto(
@@ -114,6 +128,21 @@ describe('TEST - BOLETO', () => {
       expect(jsonResponseMock.json).toHaveBeenCalledWith({
         barCode: '83610000002975900090427449300522000240419929',
         amount: '297.59',
+        expirationDate: null,
+      });
+    });
+
+    it('should return type CONVENIO-md11', () => {
+      const appController = app.get<AppController>(AppController);
+
+      appController.boleto(
+        '868800000013286301612099220200220010611223552007',
+        responseMock,
+      );
+
+      expect(jsonResponseMock.json).toHaveBeenCalledWith({
+        barCode: '86880000001286301612092202002200161122355200',
+        amount: '128.63',
         expirationDate: null,
       });
     });

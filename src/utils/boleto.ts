@@ -43,9 +43,25 @@ export class Boleto {
     const campo4 = line.substr(36, 12);
     listFields.push(campo4);
 
-    listFields.map((v: string) =>
-      this.calculateDV(v.substring(0, v.length - 1), Number(v[v.length - 1])),
-    );
+    const idValue = Number(line.substr(2, 1));
+
+    if (idValue == 6 || idValue == 7) {
+      //Calculate DV Module 10
+      listFields.map((v: string) =>
+        this.calculateDVModule10(
+          v.substring(0, v.length - 1),
+          Number(v[v.length - 1]),
+        ),
+      );
+    } else {
+      //Calculate DV Module 11
+      listFields.map((v: string) =>
+        this.calculateDVModule11(
+          v.substring(0, v.length - 1),
+          Number(v[v.length - 1]),
+        ),
+      );
+    }
   }
 
   checkDVTitulo() {
@@ -60,21 +76,21 @@ export class Boleto {
     listFields.push(campo3);
 
     listFields.map((v: string) =>
-      this.calculateDV(
+      this.calculateDVModule10(
         v.substring(0, v.length - 1),
         Number(v.slice(v.length - 1)),
       ),
     );
   }
 
-  calculateDV(campo: string, dv: number) {
+  calculateDVModule10(campo: string, dv: number) {
     //Reverse
     campo = campo.split('').reverse().join('');
 
     let resultCalcDV = 0;
     for (let i = 0; i < campo.length; i++) {
       const field = Number(campo[i]);
-      const factor = this.determineFactor(i);
+      const factor = this.determineFactorMD10(i);
       const calc = field * factor;
       resultCalcDV += this.evaluteAlgarism(calc);
     }
@@ -88,12 +104,44 @@ export class Boleto {
     }
   }
 
-  determineFactor(index: number) {
+  calculateDVModule11(campo: string, dv: number) {
+    //Reverse
+    campo = campo.split('').reverse().join('');
+
+    let resultCalcDV = 0;
+    for (let i = 0; i < campo.length; i++) {
+      const field = Number(campo[i]);
+      const factor = this.determineFactorMD11(i);
+      const calc = field * factor;
+      resultCalcDV += calc;
+    }
+
+    const resto = resultCalcDV % 11;
+
+    let resultDV: number;
+    if (resto == 0 || resto == 1) {
+      resultDV = 0;
+    } else if (resto == 10) {
+      resultDV = 1;
+    } else {
+      resultDV = Math.ceil(resultCalcDV / 11) * 11 - resultCalcDV;
+    }
+
+    if (resultDV != dv) {
+      throw 'Falha na verificação do DV';
+    }
+  }
+
+  determineFactorMD10(index: number) {
     if (index == 0) {
       return 2;
     }
     // Impar retornar 1, Par retorna 2
     return index & 1 ? 1 : 2;
+  }
+
+  determineFactorMD11(index: number) {
+    return 2 + (index >= 8 ? index - 8 : index);
   }
 
   evaluteAlgarism(calc: number) {
